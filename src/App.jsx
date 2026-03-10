@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
 
+function useIsMobile(breakpoint = 600) {
+  const [mobile, setMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth <= breakpoint
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return mobile;
+}
+
 // ─── Question Bank ───
 // 10 questions per subtest, calibrated to approximate real ASVAB difficulty spread
 const QUESTIONS = {
@@ -215,11 +228,11 @@ function ProgressBar({ current, total, subtest }) {
   );
 }
 
-function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer }) {
+function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer, mobile }) {
   return (
     <div style={{
       background: "var(--od2)", border: "1px solid var(--od3)", borderRadius: 12,
-      padding: "32px 28px", maxWidth: 680, width: "100%",
+      padding: mobile ? "20px 16px" : "32px 28px", maxWidth: 680, width: "100%",
       animation: "fadeSlide 0.3s ease-out"
     }}>
       <div style={{
@@ -254,7 +267,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer }) {
               onClick={() => onAnswer(i)}
               style={{
                 display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 18px", borderRadius: 8, border: "1px solid",
+                padding: mobile ? "12px 14px" : "14px 18px", borderRadius: 8, border: "1px solid",
                 borderColor: selected ? "var(--accent)" : "var(--od3)",
                 background: selected ? "var(--accent)" + "15" : "var(--od)",
                 color: selected ? "var(--accent)" : "var(--text)",
@@ -277,7 +290,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer }) {
             >
               <span style={{
                 fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
-                width: 26, height: 26, borderRadius: "50%", display: "flex",
+                width: mobile ? 36 : 26, height: mobile ? 36 : 26, borderRadius: "50%", display: "flex",
                 alignItems: "center", justifyContent: "center", flexShrink: 0,
                 background: selected ? "var(--accent)" : "transparent",
                 color: selected ? "var(--od)" : "var(--text2)",
@@ -295,7 +308,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer }) {
   );
 }
 
-function ResultsScreen({ scores, onRestart }) {
+function ResultsScreen({ scores, onRestart, mobile }) {
   const { wk, pc, ar, mk, ve, compositeRaw, percentile } = scores;
   const cat = getCategory(percentile);
 
@@ -308,7 +321,7 @@ function ResultsScreen({ scores, onRestart }) {
 
   return (
     <div style={{
-      maxWidth: 740, width: "100%", margin: "0 auto", padding: "40px 20px",
+      maxWidth: 740, width: "100%", margin: "0 auto", padding: mobile ? "24px 12px" : "40px 20px",
       animation: "fadeSlide 0.5s ease-out"
     }}>
       {/* Header */}
@@ -322,7 +335,7 @@ function ResultsScreen({ scores, onRestart }) {
 
         {/* Big score */}
         <div style={{
-          fontFamily: "'Oswald', sans-serif", fontSize: 96, fontWeight: 700,
+          fontFamily: "'Oswald', sans-serif", fontSize: mobile ? 56 : 96, fontWeight: 700,
           color: percentile >= 50 ? "var(--accent)" : percentile >= 31 ? "var(--gold)" : "var(--danger)",
           lineHeight: 1, marginBottom: 4
         }}>
@@ -347,7 +360,7 @@ function ResultsScreen({ scores, onRestart }) {
       {/* Subtest breakdown */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: 28, marginBottom: 24
+        padding: mobile ? 16 : 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
@@ -399,7 +412,7 @@ function ResultsScreen({ scores, onRestart }) {
       {/* Branch eligibility */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: 28, marginBottom: 24
+        padding: mobile ? 16 : 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
@@ -408,7 +421,7 @@ function ResultsScreen({ scores, onRestart }) {
           BRANCH ELIGIBILITY (HS DIPLOMA)
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${mobile ? "140px" : "180px"}, 1fr))`, gap: 12 }}>
           {BRANCHES.map((b, i) => {
             const eligible = percentile >= b.min;
             return (
@@ -443,7 +456,7 @@ function ResultsScreen({ scores, onRestart }) {
       {/* AFQT categories reference */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: 28, marginBottom: 24
+        padding: mobile ? 16 : 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
@@ -462,7 +475,7 @@ function ResultsScreen({ scores, onRestart }) {
                 background: isYou ? "var(--accent)" + "15" : "transparent",
                 border: isYou ? "1px solid var(--accent)" + "44" : "1px solid transparent"
               }}>
-                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: mobile ? 10 : 16, alignItems: "center" }}>
                   <span style={{
                     fontFamily: "'JetBrains Mono', monospace", width: 40,
                     color: isYou ? "var(--accent)" : "var(--text2)"
@@ -521,6 +534,7 @@ function ResultsScreen({ scores, onRestart }) {
 
 // ─── Main App ───
 export default function AFQTDiagnostic() {
+  const mobile = useIsMobile();
   const [phase, setPhase] = useState("intro"); // intro | quiz | results
   const [currentSubtest, setCurrentSubtest] = useState(0);
   const [currentQ, setCurrentQ] = useState(0);
@@ -594,6 +608,10 @@ export default function AFQTDiagnostic() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @media (max-width: 600px) {
+          body { -webkit-text-size-adjust: 100%; }
+          button { -webkit-tap-highlight-color: transparent; }
+        }
       `}</style>
 
       <div style={{
@@ -605,7 +623,7 @@ export default function AFQTDiagnostic() {
           <div style={{
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--od)" + "ee", backdropFilter: "blur(12px)",
-            borderBottom: "1px solid var(--od3)", padding: "12px 24px",
+            borderBottom: "1px solid var(--od3)", padding: mobile ? "10px 14px" : "12px 24px",
             display: "flex", justifyContent: "space-between", alignItems: "center"
           }}>
             <div style={{
@@ -614,7 +632,7 @@ export default function AFQTDiagnostic() {
             }}>
               AFQT DIAGNOSTIC
             </div>
-            <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: mobile ? 12 : 24, alignItems: "center" }}>
               <span style={{
                 fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
                 color: "var(--text2)"
@@ -635,7 +653,7 @@ export default function AFQTDiagnostic() {
         {/* Intro Screen */}
         {phase === "intro" && (
           <div style={{
-            maxWidth: 600, margin: "0 auto", padding: "80px 24px",
+            maxWidth: 600, margin: "0 auto", padding: mobile ? "40px 16px" : "80px 24px",
             textAlign: "center", animation: "fadeSlide 0.5s ease-out"
           }}>
             <div style={{
@@ -647,7 +665,7 @@ export default function AFQTDiagnostic() {
             </div>
 
             <h1 style={{
-              fontFamily: "'Oswald', sans-serif", fontSize: 52, fontWeight: 700,
+              fontFamily: "'Oswald', sans-serif", fontSize: mobile ? 34 : 52, fontWeight: 700,
               letterSpacing: 2, lineHeight: 1.1, marginBottom: 8,
               background: "linear-gradient(180deg, #fff 20%, var(--accent))",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
@@ -699,7 +717,7 @@ export default function AFQTDiagnostic() {
               style={{
                 fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600,
                 letterSpacing: 4, textTransform: "uppercase",
-                padding: "16px 48px", borderRadius: 8, border: "none",
+                padding: mobile ? "14px 32px" : "16px 48px", borderRadius: 8, border: "none",
                 background: "var(--accent)", color: "var(--od)",
                 cursor: "pointer", transition: "all 0.2s",
                 boxShadow: "0 0 30px var(--accent)" + "33"
@@ -750,6 +768,7 @@ export default function AFQTDiagnostic() {
               subtest={subtest}
               onAnswer={handleAnswer}
               selectedAnswer={selectedAnswer}
+              mobile={mobile}
             />
 
             <button
@@ -777,7 +796,7 @@ export default function AFQTDiagnostic() {
 
         {/* Results Screen */}
         {phase === "results" && (
-          <ResultsScreen scores={scores} onRestart={handleRestart} />
+          <ResultsScreen scores={scores} onRestart={handleRestart} mobile={mobile} />
         )}
       </div>
     </>
