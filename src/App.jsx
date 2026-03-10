@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Question Bank ───
 // 10 questions per subtest, calibrated to approximate real ASVAB difficulty spread
@@ -131,13 +131,11 @@ function getCategory(score) {
 // Rough raw-to-percentile mapping (simplified — real mapping uses IRT/3PL)
 // This maps the composite raw score to an estimated percentile
 function rawToPercentile(rawComposite) {
-  // Max raw: WK(10) + PC(10) = 20 for VE; AR(10), MK(10)
-  // AFQT raw = 2*VE_scaled + AR_scaled + MK_scaled
-  // We'll map proportion correct → approximate percentile using a sigmoid
-  // that roughly matches the 1997 norming distribution
-  const maxRaw = 40; // 10 per subtest
+  const maxRaw = 40;
+  // Clamp extremes: perfect → 99, zero → 1
+  if (rawComposite >= maxRaw) return 99;
+  if (rawComposite <= 0) return 1;
   const pct = rawComposite / maxRaw;
-  // Logistic approximation centered at 50th percentile ≈ 50% correct
   const k = 8;
   const x0 = 0.5;
   const logit = 1 / (1 + Math.exp(-k * (pct - x0)));
@@ -532,26 +530,14 @@ export default function AFQTDiagnostic() {
   const [startTime, setStartTime] = useState(null);
   const [elapsed, setElapsed] = useState(0);
 
-  const timerRef = useRef(null);
-
   useEffect(() => {
-    if (phase === "quiz") {
-      setStartTime(Date.now());
-      timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - Date.now()) / 1000));
-      }, 1000);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [phase]);
-
-  useEffect(() => {
-    if (startTime) {
+    if (phase === "quiz" && startTime) {
       const id = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       return () => clearInterval(id);
     }
-  }, [startTime]);
+  }, [phase, startTime]);
 
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
@@ -709,7 +695,7 @@ export default function AFQTDiagnostic() {
             </div>
 
             <button
-              onClick={() => setPhase("quiz")}
+              onClick={() => { setStartTime(Date.now()); setPhase("quiz"); }}
               style={{
                 fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600,
                 letterSpacing: 4, textTransform: "uppercase",
