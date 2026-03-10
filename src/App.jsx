@@ -1,127 +1,178 @@
 import { useState, useEffect } from "react";
 
-function useIsMobile(breakpoint = 600) {
-  const [mobile, setMobile] = useState(
-    typeof window !== 'undefined' && window.innerWidth <= breakpoint
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    const handler = (e) => setMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [breakpoint]);
-  return mobile;
-}
-
-// ─── Question Bank ───
+// ─── Question Bank v2.0 ───
 // 10 questions per subtest, calibrated to approximate real ASVAB difficulty spread
+// Difficulty distribution per subtest: ~4 Standard, ~3 Moderate, ~3 Advanced
 const QUESTIONS = {
   WK: [
-    { q: '"Abate" most nearly means:', a: ["Encourage", "Diminish", "Create", "Wander"], correct: 1, diff: 1 },
-    { q: '"Candid" most nearly means:', a: ["Hidden", "Sweet", "Honest", "Bright"], correct: 2, diff: 1 },
-    { q: '"Austere" most nearly means:', a: ["Wealthy", "Stern", "Musical", "Foreign"], correct: 1, diff: 2 },
-    { q: '"Lucid" most nearly means:', a: ["Dark", "Profitable", "Clear", "Loose"], correct: 2, diff: 1 },
-    { q: '"Acquiesce" most nearly means:', a: ["Comply", "Purchase", "Argue", "Release"], correct: 0, diff: 3 },
-    { q: '"Benevolent" most nearly means:', a: ["Harmful", "Kind", "Neutral", "Brave"], correct: 1, diff: 1 },
-    { q: '"Obfuscate" most nearly means:', a: ["Clarify", "Decorate", "Confuse", "Repair"], correct: 2, diff: 3 },
-    { q: '"Pragmatic" most nearly means:', a: ["Idealistic", "Practical", "Dramatic", "Ancient"], correct: 1, diff: 2 },
-    { q: '"Ephemeral" most nearly means:', a: ["Eternal", "Short-lived", "Spiritual", "Heavy"], correct: 1, diff: 3 },
-    { q: '"Diligent" most nearly means:', a: ["Lazy", "Intelligent", "Hardworking", "Cautious"], correct: 2, diff: 1 },
+    { q: '"Tenacious" most nearly means:', a: ["Gentle", "Persistent", "Fragile", "Humble"], correct: 1, diff: 1 },
+    { q: '"Concur" most nearly means:', a: ["Disagree", "Compete", "Agree", "Withdraw"], correct: 2, diff: 1 },
+    { q: '"Prudent" most nearly means:', a: ["Reckless", "Wise", "Wealthy", "Timid"], correct: 1, diff: 1 },
+    { q: '"Convivial" most nearly means:', a: ["Hostile", "Sociable", "Secretive", "Solemn"], correct: 1, diff: 2 },
+    { q: '"Diminish" most nearly means:', a: ["Reduce", "Expand", "Maintain", "Destroy"], correct: 0, diff: 1 },
+    { q: '"Capitulate" most nearly means:', a: ["Invest", "Celebrate", "Surrender", "Ascend"], correct: 2, diff: 3 },
+    { q: '"Verbose" most nearly means:', a: ["Concise", "Wordy", "Honest", "Violent"], correct: 1, diff: 2 },
+    { q: '"Pernicious" most nearly means:', a: ["Beneficial", "Nervous", "Harmful", "Attractive"], correct: 2, diff: 3 },
+    { q: '"Alleviate" most nearly means:', a: ["Worsen", "Relieve", "Accuse", "Elevate"], correct: 1, diff: 2 },
+    { q: '"Surreptitious" most nearly means:', a: ["Obvious", "Generous", "Stealthy", "Rapid"], correct: 2, diff: 3 },
   ],
   PC: [
     {
-      q: `Read the passage and answer the question.\n\n"The platoon moved through the dense jungle in single file. Visibility was less than ten meters. The point man raised his fist, and everyone froze."\n\nWhy did everyone stop moving?`,
-      a: ["They were tired", "The point man signaled a halt", "They reached their destination", "It was getting dark"],
+      q: `Read the passage and answer the question.\n\n"During the field exercise, the squad leader noticed dark clouds forming on the western horizon. He immediately ordered the team to set up shelters and secure all loose equipment before continuing the patrol."\n\nWhy did the squad leader give these orders?`,
+      a: ["He wanted to end the exercise early", "He was preparing for incoming bad weather", "The team needed rest", "Enemy forces were approaching"],
       correct: 1, diff: 1
     },
     {
-      q: `"New recruits often struggle with the transition from civilian to military life. The structured schedule, physical demands, and loss of personal autonomy can be overwhelming at first. However, most adapt within the first few weeks of basic training."\n\nThe main idea of this passage is:`,
-      a: ["Military life is too difficult", "Recruits eventually adjust to military life", "Basic training is too long", "Civilians cannot become soldiers"],
+      q: `"The military commissary offers groceries at cost plus a small surcharge, making prices significantly lower than off-base supermarkets. Active-duty personnel and their dependents are eligible to shop there, providing a meaningful financial benefit for military families."\n\nThe main purpose of the commissary is to:`,
+      a: ["Generate revenue for the military", "Provide affordable groceries to service members", "Compete with civilian grocery stores", "Limit what military families can purchase"],
       correct: 1, diff: 1
     },
     {
-      q: `"The engine's cooling system works by circulating coolant through passages in the engine block. As the coolant absorbs heat, it flows to the radiator where air passing over the fins dissipates the heat."\n\nAccording to the passage, heat is released:`,
-      a: ["In the engine block", "Through the coolant passages", "At the radiator", "By the water pump"],
+      q: `"Body armor has evolved significantly since its introduction. Modern ceramic plate inserts can stop rifle rounds that would have penetrated older steel plates, while weighing considerably less. However, the trade-off is that ceramic plates crack upon impact and must be replaced after absorbing a hit."\n\nAccording to the passage, a disadvantage of ceramic plates is:`,
+      a: ["They are heavier than steel plates", "They cannot stop rifle rounds", "They must be replaced after being struck", "They are too expensive for standard issue"],
       correct: 2, diff: 2
     },
     {
-      q: `"Although solar panels have become significantly cheaper over the past decade, their adoption in rural areas remains limited. The primary barrier is not cost but rather the lack of qualified technicians to install and maintain the systems."\n\nWhat is the main barrier to solar adoption in rural areas?`,
-      a: ["High cost of panels", "Shortage of installation professionals", "Lack of sunlight", "Government regulations"],
+      q: `"Studies show that sleep deprivation among military personnel leads to measurably slower reaction times, impaired judgment, and reduced situational awareness. Despite this evidence, operational demands frequently require soldiers to function on four hours of sleep or less during extended missions. Some commanders have begun implementing rotating rest schedules to mitigate these effects."\n\nThe passage suggests that rotating rest schedules are intended to:`,
+      a: ["Eliminate the need for sleep entirely", "Reduce the negative effects of insufficient sleep", "Allow soldiers to sleep during combat", "Replace traditional training methods"],
       correct: 1, diff: 2
     },
     {
-      q: `"The Geneva Conventions established rules for the humanitarian treatment of war. They protect wounded soldiers, prisoners of war, and civilians. Nations that violate these agreements may face international sanctions."\n\nThe Geneva Conventions primarily deal with:`,
-      a: ["Trade agreements", "Wartime conduct", "Environmental protection", "Arms reduction"],
+      q: `"The GPS satellite constellation consists of at least 24 satellites orbiting Earth at approximately 20,200 kilometers altitude. Each satellite transmits precise timing signals. A GPS receiver calculates its position by measuring the time delay of signals from at least four satellites and using trilateration to determine its exact location."\n\nThe minimum number of satellites needed for a GPS receiver to determine its position is:`,
+      a: ["Two", "Three", "Four", "Six"],
+      correct: 2, diff: 1
+    },
+    {
+      q: `"The concept of 'mission command' represents a shift from rigid top-down orders to a philosophy where subordinate leaders are given a clear objective and the freedom to determine how best to achieve it. Proponents argue this approach produces more agile units that can adapt to rapidly changing conditions on the ground. Critics counter that without tight control, units risk acting in ways that conflict with the broader operational plan."\n\nWhich of the following best describes the critics' concern with mission command?`,
+      a: ["Subordinate leaders lack the training to make decisions", "Individual unit actions may undermine the overall strategy", "Mission command is too slow for modern warfare", "Soldiers prefer receiving detailed orders"],
+      correct: 1, diff: 3
+    },
+    {
+      q: `"Corrosion is the single largest maintenance cost driver for naval vessels. Salt water, humidity, and temperature fluctuations create an environment where exposed metal surfaces deteriorate rapidly. Preventive measures include specialized coatings, cathodic protection systems, and regular inspection cycles, yet corrosion damage still accounts for roughly one-quarter of all unscheduled ship maintenance."\n\nIt can be inferred from the passage that:`,
+      a: ["Corrosion is easily prevented with modern coatings", "Naval maintenance costs would be lower in freshwater environments", "Cathodic protection eliminates the need for inspections", "Ships require no maintenance in dry dock"],
+      correct: 1, diff: 3
+    },
+    {
+      q: `"When a helicopter enters autorotation, the pilot reduces the engine throttle and allows the upward flow of air through the rotor blades to maintain their rotation. This technique allows the helicopter to descend in a controlled manner even after a complete engine failure."\n\nAutorotation is best described as a method for:`,
+      a: ["Increasing a helicopter's speed", "Landing safely without engine power", "Hovering in place during combat", "Refueling while airborne"],
       correct: 1, diff: 1
     },
     {
-      q: `"Studies show that sleep deprivation impairs cognitive function more than moderate alcohol consumption. After 17 hours without sleep, performance is equivalent to a blood alcohol level of 0.05%."\n\nThe passage implies that:`,
-      a: ["Alcohol is not dangerous", "Sleep is more important than previously thought", "Extended wakefulness significantly degrades mental performance", "17 hours of work is normal"],
-      correct: 2, diff: 2
-    },
-    {
-      q: `"The army uses a rank structure to maintain order and ensure clear chains of command. Each rank carries specific responsibilities, and the system allows for rapid decision-making in combat situations where hesitation can be fatal."\n\nThe rank structure exists primarily to:`,
-      a: ["Reward senior soldiers", "Enable efficient command and decision-making", "Reduce the number of officers", "Increase pay for leaders"],
-      correct: 1, diff: 1
-    },
-    {
-      q: `"Tectonic plates move at roughly the speed at which fingernails grow — about 2 to 5 centimeters per year. Yet over millions of years, this imperceptible motion has opened oceans, raised mountain ranges, and reshaped entire continents."\n\nThe author uses the fingernail comparison to:`,
-      a: ["Show plates move dangerously fast", "Illustrate how slow the movement is", "Explain nail growth", "Argue against plate tectonics"],
+      q: `"The Geneva Conventions establish that prisoners of war must be treated humanely at all times. They are required only to provide their name, rank, date of birth, and service number when captured. Compelling a prisoner to provide military intelligence through physical or mental coercion is explicitly prohibited under these international agreements."\n\nAccording to the passage, a prisoner of war is obligated to disclose:`,
+      a: ["Details about their unit's location and mission", "Only basic personal and service identification", "Information if questioned by a senior officer", "Nothing at all under any circumstances"],
       correct: 1, diff: 2
     },
     {
-      q: `"The briefing stated that the mission would commence at 0300 hours. All personnel were to assemble at the staging area no later than 0230. Failure to report would result in disciplinary action."\n\nPersonnel must arrive at the staging area by:`,
-      a: ["3:00 AM", "2:30 AM", "3:30 AM", "2:00 AM"],
-      correct: 1, diff: 1
-    },
-    {
-      q: `"While correlation between two variables indicates they move together, it does not establish that one causes the other. A classic example: ice cream sales and drowning rates both increase in summer, but buying ice cream does not cause drowning."\n\nThe author's main point is that:`,
-      a: ["Ice cream is dangerous", "Summer is the most dangerous season", "Statistical association does not prove causation", "Drowning rates are predictable"],
+      q: `"Recent analyses of unmanned aerial vehicle (UAV) operations indicate that while drones dramatically reduce risk to pilots, they introduce new vulnerabilities. Signal jamming can sever the link between the operator and the aircraft, and the latency inherent in satellite communication can delay operator reaction times by several hundred milliseconds — a gap that may prove critical in time-sensitive engagements."\n\nThe passage identifies which of the following as a limitation of drone operations?`,
+      a: ["Drones are more expensive than manned aircraft", "Operators cannot see the battlefield clearly", "Communication delays can affect response time", "Drones cannot carry sufficient weaponry"],
       correct: 2, diff: 3
     },
   ],
   AR: [
-    { q: "A soldier runs 3 miles in 21 minutes. At this pace, how long would it take to run 5 miles?", a: ["30 min", "35 min", "25 min", "40 min"], correct: 1, diff: 1 },
-    { q: "A store sells boots for $85. If they're on sale for 20% off, what is the sale price?", a: ["$65", "$68", "$70", "$17"], correct: 1, diff: 1 },
-    { q: "A rectangular field is 120 yards long and 50 yards wide. What is its perimeter?", a: ["340 yards", "6000 yards", "170 yards", "240 yards"], correct: 0, diff: 1 },
-    { q: "If 3 mechanics can repair 12 vehicles in 4 days, how many vehicles can 5 mechanics repair in 6 days?", a: ["20", "24", "30", "36"], correct: 2, diff: 3 },
-    { q: "A fuel tank holds 60 gallons. If a generator uses 2.5 gallons per hour, how many hours until the tank is empty?", a: ["20", "22", "24", "25"], correct: 2, diff: 1 },
-    { q: "A recruit's score improved from 40 to 52 on a fitness test. What was the percent increase?", a: ["12%", "20%", "30%", "25%"], correct: 2, diff: 2 },
-    { q: "Two convoys leave from the same base. One travels north at 40 mph and the other east at 30 mph. After 2 hours, how far apart are they?", a: ["100 miles", "140 miles", "70 miles", "50 miles"], correct: 0, diff: 3 },
-    { q: "A squad of 8 splits MREs equally. If they have 3 cases of 12 MREs each, how many does each soldier get?", a: ["3", "4", "4.5", "5"], correct: 2, diff: 1 },
-    { q: "If you invest $2,000 at 5% simple annual interest, how much total will you have after 3 years?", a: ["$2,150", "$2,300", "$2,315", "$2,250"], correct: 1, diff: 2 },
-    { q: "A water tank is ⅓ full. After adding 40 gallons, it is ¾ full. What is the tank's total capacity?", a: ["80 gallons", "96 gallons", "100 gallons", "120 gallons"], correct: 1, diff: 3 },
+    {
+      q: "A military convoy travels 180 miles in 3 hours. At that rate, how long will it take to travel 300 miles?",
+      a: ["4 hours", "5 hours", "6 hours", "4.5 hours"],
+      correct: 1, diff: 1
+    },
+    {
+      q: "A recruit scored 72, 85, 68, and 91 on four practice exams. What is the average score?",
+      a: ["76", "79", "81", "74"],
+      correct: 1, diff: 1
+    },
+    {
+      q: "A supply depot has 1,200 MREs. If each squad of 12 soldiers receives 4 MREs per day, how many squads can be supplied for 5 days?",
+      a: ["5 squads", "4 squads", "6 squads", "3 squads"],
+      correct: 0, diff: 2
+    },
+    {
+      q: "A fuel tank holds 240 gallons. If a generator uses 15 gallons per hour, how many hours can it run before the tank is empty?",
+      a: ["14 hours", "15 hours", "16 hours", "18 hours"],
+      correct: 2, diff: 1
+    },
+    {
+      q: "Corporal Davis earns $2,400 per month. He saves 15% of his pay and sends 25% to his family. How much does he have left for other expenses?",
+      a: ["$1,200", "$1,440", "$1,560", "$1,380"],
+      correct: 1, diff: 2
+    },
+    {
+      q: "A rectangular barracks floor measures 40 feet by 60 feet. If carpet tiles cover 4 square feet each, how many tiles are needed to cover the entire floor?",
+      a: ["500", "600", "700", "2,400"],
+      correct: 1, diff: 1
+    },
+    {
+      q: "Two helicopters depart from the same base. One flies north at 120 mph, the other flies south at 150 mph. After 2 hours, how far apart are they?",
+      a: ["480 miles", "540 miles", "270 miles", "300 miles"],
+      correct: 1, diff: 2
+    },
+    {
+      q: "A soldier can complete an obstacle course in 8 minutes. After training, his time improves by 12.5%. What is his new time?",
+      a: ["6 minutes", "7 minutes", "7.5 minutes", "6.5 minutes"],
+      correct: 1, diff: 3
+    },
+    {
+      q: "A cylindrical water tank has a radius of 3 feet and a height of 7 feet. Using π ≈ 3.14, approximately how many cubic feet of water can it hold?",
+      a: ["197.82 cu ft", "131.88 cu ft", "65.94 cu ft", "263.76 cu ft"],
+      correct: 0, diff: 3
+    },
+    {
+      q: "A unit of 45 soldiers needs to cross a river using boats that hold 8 soldiers each (plus one operator who is not counted among the 45). What is the minimum number of one-way trips needed to get all 45 soldiers across?",
+      a: ["5 trips", "6 trips", "7 trips", "8 trips"],
+      correct: 1, diff: 3
+    },
   ],
   MK: [
-    { q: "What is the value of x if 3x + 7 = 22?", a: ["3", "5", "7", "15"], correct: 1, diff: 1 },
-    { q: "What is the area of a triangle with base 10 and height 6?", a: ["60", "30", "16", "20"], correct: 1, diff: 1 },
-    { q: "Simplify: (x²)(x³)", a: ["x⁵", "x⁶", "2x⁵", "x⁸"], correct: 0, diff: 1 },
-    { q: "What is the value of √144?", a: ["11", "12", "13", "14"], correct: 1, diff: 1 },
-    { q: "If a circle has a radius of 7, what is its area? (Use π ≈ 3.14)", a: ["43.96", "153.86", "21.98", "49"], correct: 1, diff: 2 },
-    { q: "Solve: 2(x - 3) = 4x + 2", a: ["x = -4", "x = -2", "x = 4", "x = 2"], correct: 0, diff: 2 },
-    { q: "What is the slope of the line passing through (2, 5) and (6, 13)?", a: ["2", "4", "½", "8"], correct: 0, diff: 2 },
-    { q: "A right triangle has legs of 5 and 12. What is the hypotenuse?", a: ["13", "17", "15", "14"], correct: 0, diff: 2 },
-    { q: "Factor: x² - 9", a: ["(x-3)(x+3)", "(x-9)(x+1)", "(x-3)²", "Cannot be factored"], correct: 0, diff: 2 },
-    { q: "If f(x) = 2x² - 3x + 1, what is f(3)?", a: ["10", "12", "16", "8"], correct: 0, diff: 3 },
+    { q: "Solve for x: 3x + 9 = 24", a: ["5", "7", "3", "8"], correct: 0, diff: 1 },
+    { q: "What is 7² − 3²?", a: ["40", "46", "10", "58"], correct: 0, diff: 1 },
+    { q: "What is the value of (x³)(x⁴)?", a: ["x⁷", "x¹²", "x¹", "7x"], correct: 0, diff: 1 },
+    { q: "What is the area of a triangle with a base of 14 cm and a height of 10 cm?", a: ["140 cm²", "70 cm²", "35 cm²", "100 cm²"], correct: 1, diff: 1 },
+    {
+      q: "Solve the system: 2x + y = 10 and x − y = 2. What is x?",
+      a: ["3", "4", "5", "6"],
+      correct: 1, diff: 2
+    },
+    {
+      q: "What is the circumference of a circle with diameter 10? (Use π ≈ 3.14)",
+      a: ["31.4", "62.8", "15.7", "78.5"],
+      correct: 0, diff: 2
+    },
+    {
+      q: "If the two legs of a right triangle are 9 and 12, what is the length of the hypotenuse?",
+      a: ["15", "21", "13", "18"],
+      correct: 0, diff: 2
+    },
+    {
+      q: "Simplify: (4x² − 12x) / (4x)",
+      a: ["x − 3", "x − 12", "x² − 3x", "4x − 12"],
+      correct: 0, diff: 3
+    },
+    {
+      q: "What are the solutions to x² − 5x + 6 = 0?",
+      a: ["x = 2 and x = 3", "x = −2 and x = −3", "x = 1 and x = 6", "x = −1 and x = −6"],
+      correct: 0, diff: 3
+    },
+    {
+      q: "A line passes through the points (1, 2) and (4, 11). What is its slope?",
+      a: ["3", "9", "4", "2"],
+      correct: 0, diff: 3
+    },
   ],
 };
 
-// Subtest metadata
+// ─── Config ───
 const SUBTESTS = [
-  { key: "WK", name: "Word Knowledge", icon: "📖", count: 10, color: "#2E7D32" },
-  { key: "PC", name: "Paragraph Comprehension", icon: "📄", count: 10, color: "#1565C0" },
+  { key: "WK", name: "Word Knowledge", icon: "📝", count: 10, color: "#2E7D32" },
+  { key: "PC", name: "Paragraph Comprehension", icon: "📖", count: 10, color: "#1565C0" },
   { key: "AR", name: "Arithmetic Reasoning", icon: "🧮", count: 10, color: "#E65100" },
   { key: "MK", name: "Mathematics Knowledge", icon: "📐", count: 10, color: "#6A1B9A" },
 ];
 
-// Branch minimums (HS diploma)
 const BRANCHES = [
-  { name: "Army", min: 31, color: "#4B5320" },
-  { name: "Navy", min: 31, color: "#003B6F" },
-  { name: "Air Force", min: 31, color: "#00308F" },
-  { name: "Marines", min: 32, color: "#8B0000" },
-  { name: "Coast Guard", min: 40, color: "#F37021" },
-  { name: "Space Force", min: 36, color: "#0B1F3F" },
+  { name: "Army", min: 31 },
+  { name: "Navy", min: 31 },
+  { name: "Air Force", min: 31 },
+  { name: "Marines", min: 32 },
+  { name: "Coast Guard", min: 40 },
+  { name: "Space Force", min: 36 },
 ];
 
 const AFQT_CATEGORIES = [
@@ -134,18 +185,9 @@ const AFQT_CATEGORIES = [
   { cat: "V", range: "1–9", desc: "Not Eligible", min: 1 },
 ];
 
-function getCategory(score) {
-  for (const c of AFQT_CATEGORIES) {
-    if (score >= c.min) return c;
-  }
-  return AFQT_CATEGORIES[AFQT_CATEGORIES.length - 1];
-}
-
-// Rough raw-to-percentile mapping (simplified — real mapping uses IRT/3PL)
-// This maps the composite raw score to an estimated percentile
+// ─── Scoring ───
 function rawToPercentile(rawComposite) {
   const maxRaw = 40;
-  // Clamp extremes: perfect → 99, zero → 1
   if (rawComposite >= maxRaw) return 99;
   if (rawComposite <= 0) return 1;
   const pct = rawComposite / maxRaw;
@@ -155,17 +197,21 @@ function rawToPercentile(rawComposite) {
   return Math.max(1, Math.min(99, Math.round(logit * 98 + 1)));
 }
 
+function getCategory(score) {
+  for (const c of AFQT_CATEGORIES) {
+    if (score >= c.min) return c;
+  }
+  return AFQT_CATEGORIES[AFQT_CATEGORIES.length - 1];
+}
+
 function computeAFQT(answers) {
   const wk = QUESTIONS.WK.filter((_, i) => answers.WK?.[i] === QUESTIONS.WK[i].correct).length;
   const pc = QUESTIONS.PC.filter((_, i) => answers.PC?.[i] === QUESTIONS.PC[i].correct).length;
   const ar = QUESTIONS.AR.filter((_, i) => answers.AR?.[i] === QUESTIONS.AR[i].correct).length;
   const mk = QUESTIONS.MK.filter((_, i) => answers.MK?.[i] === QUESTIONS.MK[i].correct).length;
 
-  // VE = WK + PC (raw out of 20), then scale: VE_scaled = (VE/20)*100 → standard score
   const ve = wk + pc;
-  // AFQT composite raw = 2*VE + AR + MK (weighted)
-  // For our 10-per-subtest approach: use raw counts, weight VE double
-  const compositeRaw = wk + pc + ar + mk; // total correct out of 40
+  const compositeRaw = wk + pc + ar + mk;
   const percentile = rawToPercentile(compositeRaw);
 
   return { wk, pc, ar, mk, ve, compositeRaw, percentile };
@@ -228,11 +274,11 @@ function ProgressBar({ current, total, subtest }) {
   );
 }
 
-function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer, mobile }) {
+function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer }) {
   return (
     <div style={{
       background: "var(--od2)", border: "1px solid var(--od3)", borderRadius: 12,
-      padding: mobile ? "20px 16px" : "32px 28px", maxWidth: 680, width: "100%",
+      padding: "32px 28px", maxWidth: 680, width: "100%",
       animation: "fadeSlide 0.3s ease-out"
     }}>
       <div style={{
@@ -267,7 +313,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer, mobi
               onClick={() => onAnswer(i)}
               style={{
                 display: "flex", alignItems: "center", gap: 14,
-                padding: mobile ? "12px 14px" : "14px 18px", borderRadius: 8, border: "1px solid",
+                padding: "14px 18px", borderRadius: 8, border: "1px solid",
                 borderColor: selected ? "var(--accent)" : "var(--od3)",
                 background: selected ? "var(--accent)" + "15" : "var(--od)",
                 color: selected ? "var(--accent)" : "var(--text)",
@@ -290,7 +336,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer, mobi
             >
               <span style={{
                 fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
-                width: mobile ? 36 : 26, height: mobile ? 36 : 26, borderRadius: "50%", display: "flex",
+                width: 26, height: 26, borderRadius: "50%", display: "flex",
                 alignItems: "center", justifyContent: "center", flexShrink: 0,
                 background: selected ? "var(--accent)" : "transparent",
                 color: selected ? "var(--od)" : "var(--text2)",
@@ -308,7 +354,7 @@ function QuestionCard({ question, index, subtest, onAnswer, selectedAnswer, mobi
   );
 }
 
-function ResultsScreen({ scores, onRestart, mobile }) {
+function ResultsScreen({ scores, onRestart }) {
   const { wk, pc, ar, mk, ve, compositeRaw, percentile } = scores;
   const cat = getCategory(percentile);
 
@@ -321,7 +367,7 @@ function ResultsScreen({ scores, onRestart, mobile }) {
 
   return (
     <div style={{
-      maxWidth: 740, width: "100%", margin: "0 auto", padding: mobile ? "24px 12px" : "40px 20px",
+      maxWidth: 740, width: "100%", margin: "0 auto", padding: "40px 20px",
       animation: "fadeSlide 0.5s ease-out"
     }}>
       {/* Header */}
@@ -335,7 +381,7 @@ function ResultsScreen({ scores, onRestart, mobile }) {
 
         {/* Big score */}
         <div style={{
-          fontFamily: "'Oswald', sans-serif", fontSize: mobile ? 56 : 96, fontWeight: 700,
+          fontFamily: "'Oswald', sans-serif", fontSize: 96, fontWeight: 700,
           color: percentile >= 50 ? "var(--accent)" : percentile >= 31 ? "var(--gold)" : "var(--danger)",
           lineHeight: 1, marginBottom: 4
         }}>
@@ -360,7 +406,7 @@ function ResultsScreen({ scores, onRestart, mobile }) {
       {/* Subtest breakdown */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: mobile ? 16 : 28, marginBottom: 24
+        padding: 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
@@ -376,19 +422,20 @@ function ResultsScreen({ scores, onRestart, mobile }) {
               fontSize: 14
             }}>
               <span style={{ color: "var(--text)" }}>{s.label}</span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", color: s.color }}>
+              <span style={{
+                fontFamily: "'JetBrains Mono', monospace", color: s.color
+              }}>
                 {s.score}/{s.max}
               </span>
             </div>
             <div style={{
-              width: "100%", height: 8, background: "var(--od)", borderRadius: 4,
+              width: "100%", height: 8, background: "var(--od3)", borderRadius: 4,
               overflow: "hidden"
             }}>
               <div style={{
                 width: `${(s.score / s.max) * 100}%`, height: "100%",
                 background: s.color, borderRadius: 4,
-                transition: "width 0.8s ease-out",
-                transitionDelay: `${i * 150}ms`
+                transition: "width 0.8s ease", transitionDelay: `${i * 0.15}s`
               }} />
             </div>
           </div>
@@ -398,54 +445,55 @@ function ResultsScreen({ scores, onRestart, mobile }) {
           marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--od3)",
           display: "flex", justifyContent: "space-between", fontSize: 14
         }}>
-          <span style={{ color: "var(--text2)" }}>Verbal Expression (VE = WK + PC)</span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)" }}>{ve}/20</span>
-        </div>
-        <div style={{
-          display: "flex", justifyContent: "space-between", fontSize: 14, marginTop: 8
-        }}>
-          <span style={{ color: "var(--text2)" }}>Total Correct</span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)" }}>{compositeRaw}/40</span>
+          <span style={{ color: "var(--text2)" }}>
+            Verbal Expression (VE): <span style={{
+              fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)"
+            }}>{ve}/20</span>
+          </span>
+          <span style={{ color: "var(--text2)" }}>
+            Total Correct: <span style={{
+              fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)"
+            }}>{compositeRaw}/40</span>
+          </span>
         </div>
       </div>
 
-      {/* Branch eligibility */}
+      {/* Branch Eligibility */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: mobile ? 16 : 28, marginBottom: 24
+        padding: 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
-          textTransform: "uppercase", color: "var(--text2)", marginBottom: 20
+          textTransform: "uppercase", color: "var(--text2)", marginBottom: 16
         }}>
           BRANCH ELIGIBILITY (HS DIPLOMA)
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${mobile ? "140px" : "180px"}, 1fr))`, gap: 12 }}>
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10
+        }}>
           {BRANCHES.map((b, i) => {
             const eligible = percentile >= b.min;
             return (
               <div key={i} style={{
-                padding: "14px 16px", borderRadius: 8,
-                border: `1px solid ${eligible ? b.color + "88" : "var(--od3)"}`,
-                background: eligible ? b.color + "18" : "var(--od)",
-                display: "flex", justifyContent: "space-between", alignItems: "center"
+                padding: "12px 16px", borderRadius: 8,
+                background: eligible ? "var(--accent)" + "15" : "var(--danger)" + "10",
+                border: `1px solid ${eligible ? "var(--accent)" + "44" : "var(--danger)" + "33"}`,
+                textAlign: "center"
               }}>
-                <div>
-                  <div style={{
-                    fontSize: 14, fontWeight: 600,
-                    color: eligible ? "#fff" : "var(--text2)"
-                  }}>{b.name}</div>
-                  <div style={{
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
-                    color: "var(--text2)", marginTop: 2
-                  }}>Min: {b.min}</div>
+                <div style={{
+                  fontFamily: "'Oswald', sans-serif", fontSize: 14,
+                  color: eligible ? "var(--accent)" : "var(--danger)",
+                  letterSpacing: 1
+                }}>
+                  {b.name}
                 </div>
                 <div style={{
-                  fontSize: 18,
-                  filter: eligible ? "none" : "grayscale(1) opacity(0.4)"
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+                  color: "var(--text2)", marginTop: 4
                 }}>
-                  {eligible ? "✅" : "❌"}
+                  Min: {b.min} {eligible ? "✓" : "✗"}
                 </div>
               </div>
             );
@@ -453,10 +501,10 @@ function ResultsScreen({ scores, onRestart, mobile }) {
         </div>
       </div>
 
-      {/* AFQT categories reference */}
+      {/* AFQT Categories */}
       <div style={{
         background: "var(--od2)", borderRadius: 12, border: "1px solid var(--od3)",
-        padding: mobile ? 16 : 28, marginBottom: 24
+        padding: 28, marginBottom: 24
       }}>
         <div style={{
           fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: 3,
@@ -471,13 +519,13 @@ function ResultsScreen({ scores, onRestart, mobile }) {
             return (
               <div key={i} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "8px 12px", borderRadius: 6, fontSize: 13,
+                padding: "8px 12px", borderRadius: 6,
                 background: isYou ? "var(--accent)" + "15" : "transparent",
                 border: isYou ? "1px solid var(--accent)" + "44" : "1px solid transparent"
               }}>
-                <div style={{ display: "flex", gap: mobile ? 10 : 16, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <span style={{
-                    fontFamily: "'JetBrains Mono', monospace", width: 40,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
                     color: isYou ? "var(--accent)" : "var(--text2)"
                   }}>{c.cat}</span>
                   <span style={{ color: isYou ? "var(--text)" : "var(--text2)" }}>{c.desc}</span>
@@ -534,7 +582,6 @@ function ResultsScreen({ scores, onRestart, mobile }) {
 
 // ─── Main App ───
 export default function AFQTDiagnostic() {
-  const mobile = useIsMobile();
   const [phase, setPhase] = useState("intro"); // intro | quiz | results
   const [currentSubtest, setCurrentSubtest] = useState(0);
   const [currentQ, setCurrentQ] = useState(0);
@@ -583,7 +630,6 @@ export default function AFQTDiagnostic() {
       setCurrentSubtest(currentSubtest + 1);
       setCurrentQ(0);
     } else {
-      // Compute results
       const finalScores = computeAFQT(newAnswers);
       setScores(finalScores);
       setPhase("results");
@@ -608,10 +654,6 @@ export default function AFQTDiagnostic() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @media (max-width: 600px) {
-          body { -webkit-text-size-adjust: 100%; }
-          button { -webkit-tap-highlight-color: transparent; }
-        }
       `}</style>
 
       <div style={{
@@ -623,7 +665,7 @@ export default function AFQTDiagnostic() {
           <div style={{
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--od)" + "ee", backdropFilter: "blur(12px)",
-            borderBottom: "1px solid var(--od3)", padding: mobile ? "10px 14px" : "12px 24px",
+            borderBottom: "1px solid var(--od3)", padding: "12px 24px",
             display: "flex", justifyContent: "space-between", alignItems: "center"
           }}>
             <div style={{
@@ -632,7 +674,7 @@ export default function AFQTDiagnostic() {
             }}>
               AFQT DIAGNOSTIC
             </div>
-            <div style={{ display: "flex", gap: mobile ? 12 : 24, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
               <span style={{
                 fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
                 color: "var(--text2)"
@@ -653,7 +695,7 @@ export default function AFQTDiagnostic() {
         {/* Intro Screen */}
         {phase === "intro" && (
           <div style={{
-            maxWidth: 600, margin: "0 auto", padding: mobile ? "40px 16px" : "80px 24px",
+            maxWidth: 600, margin: "0 auto", padding: "80px 24px",
             textAlign: "center", animation: "fadeSlide 0.5s ease-out"
           }}>
             <div style={{
@@ -665,7 +707,7 @@ export default function AFQTDiagnostic() {
             </div>
 
             <h1 style={{
-              fontFamily: "'Oswald', sans-serif", fontSize: mobile ? 34 : 52, fontWeight: 700,
+              fontFamily: "'Oswald', sans-serif", fontSize: 52, fontWeight: 700,
               letterSpacing: 2, lineHeight: 1.1, marginBottom: 8,
               background: "linear-gradient(180deg, #fff 20%, var(--accent))",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
@@ -698,60 +740,62 @@ export default function AFQTDiagnostic() {
                   padding: "10px 0",
                   borderBottom: i < 3 ? "1px solid var(--od3)" : "none"
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span>{s.icon}</span>
-                    <span style={{ fontSize: 14, color: "var(--text)" }}>{s.name}</span>
-                  </div>
+                  <span style={{ fontSize: 15, color: "var(--text)" }}>
+                    {s.icon} {s.name}
+                  </span>
                   <span style={{
                     fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
                     color: s.color
                   }}>
-                    {s.count} Qs
+                    {s.count} questions
                   </span>
                 </div>
               ))}
             </div>
 
+            <div style={{
+              fontSize: 13, color: "var(--text2)", marginBottom: 32
+            }}>
+              No time limit. Questions range from Standard to Advanced difficulty.
+            </div>
+
             <button
-              onClick={() => { setStartTime(Date.now()); setPhase("quiz"); }}
+              onClick={() => {
+                setStartTime(Date.now());
+                setPhase("quiz");
+              }}
               style={{
                 fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600,
                 letterSpacing: 4, textTransform: "uppercase",
-                padding: mobile ? "14px 32px" : "16px 48px", borderRadius: 8, border: "none",
+                padding: "16px 48px", borderRadius: 8, border: "none",
                 background: "var(--accent)", color: "var(--od)",
-                cursor: "pointer", transition: "all 0.2s",
-                boxShadow: "0 0 30px var(--accent)" + "33"
+                cursor: "pointer", transition: "all 0.2s"
               }}
-              onMouseEnter={e => e.target.style.transform = "scale(1.03)"}
-              onMouseLeave={e => e.target.style.transform = "scale(1)"}
+              onMouseEnter={e => e.target.style.background = "var(--accent2)"}
+              onMouseLeave={e => e.target.style.background = "var(--accent)"}
             >
               BEGIN TEST
             </button>
-
-            <p style={{
-              fontSize: 12, color: "var(--text2)", marginTop: 24, fontStyle: "italic"
-            }}>
-              No time limit, but pace yourself — the real CAT-ASVAB is timed.
-            </p>
           </div>
         )}
 
         {/* Quiz Screen */}
         {phase === "quiz" && (
           <div style={{
-            maxWidth: 720, margin: "0 auto", padding: "32px 20px",
-            display: "flex", flexDirection: "column", alignItems: "center"
+            maxWidth: 680, margin: "0 auto", padding: "32px 20px",
+            display: "flex", flexDirection: "column", alignItems: "center",
+            animation: "fadeSlide 0.3s ease-out"
           }}>
             {/* Subtest tabs */}
             <div style={{
-              display: "flex", gap: 4, marginBottom: 24, width: "100%", maxWidth: 680
+              display: "flex", gap: 6, marginBottom: 24, width: "100%"
             }}>
               {SUBTESTS.map((s, i) => {
-                const done = i < currentSubtest;
                 const active = i === currentSubtest;
+                const done = i < currentSubtest;
                 return (
                   <div key={i} style={{
-                    flex: 1, height: 3, borderRadius: 2,
+                    flex: 1, height: 4, borderRadius: 2,
                     background: done ? s.color : active ? s.color + "88" : "var(--od3)",
                     transition: "background 0.3s"
                   }} />
@@ -768,7 +812,6 @@ export default function AFQTDiagnostic() {
               subtest={subtest}
               onAnswer={handleAnswer}
               selectedAnswer={selectedAnswer}
-              mobile={mobile}
             />
 
             <button
@@ -796,7 +839,7 @@ export default function AFQTDiagnostic() {
 
         {/* Results Screen */}
         {phase === "results" && (
-          <ResultsScreen scores={scores} onRestart={handleRestart} mobile={mobile} />
+          <ResultsScreen scores={scores} onRestart={handleRestart} />
         )}
       </div>
     </>
